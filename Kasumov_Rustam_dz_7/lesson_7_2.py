@@ -1,0 +1,79 @@
+import json
+import os
+
+
+def create_starter(starter_dict, path=os.getcwd()):
+    if not isinstance(starter_dict, dict):
+        raise Exception('Неверный формат данных стартера!')
+    for name, values in starter_dict.items():
+        dir_path = os.path.join(path, name)
+        if isinstance(values, dict):
+            if not os.path.exists(dir_path):
+                os.mkdir(dir_path)
+            create_starter(values, dir_path)
+        elif values is None:
+            if not os.path.exists(dir_path):
+                if len(name.split('.')) > 1:
+                    open(dir_path, 'a').close()
+                else:
+                    os.mkdir(dir_path)
+        else:
+            raise Exception('Неверный формат подкаталога стартера!')
+
+
+def find_stop_index(data, level):
+    stop = 0
+    for idx, word in enumerate(data):
+        if idx + 1 >= len(data):
+            stop += 1
+            break
+        level_bash = get_level_bash(word)
+        if level >= level_bash:
+            return idx
+        stop = idx + 1
+    return stop
+
+
+def get_level_bash(word):
+    count = 0
+    for symb in word:
+        if symb == '-':
+            count += 1
+        else:
+            break
+    return count
+
+
+def parse_yaml(data):
+    data.append('')
+    r_dict = {}
+    idx = 0
+    while idx <= len(data):
+        if idx + 1 >= len(data):
+            break
+        word = data[idx]
+        if word == '':
+            idx += 1
+            continue
+        key = word.replace('-', '')
+        next_word = data[idx + 1]
+        level_bash = get_level_bash(word)
+        next_level_bash = get_level_bash(next_word)
+        if next_level_bash > level_bash:
+            start = idx + 1
+            stop = find_stop_index(data[start:], level_bash)
+            r_dict[key] = parse_yaml(data[start:stop + start])
+            idx += stop
+        else:
+            r_dict[key] = None
+        idx += 1
+    return r_dict
+
+
+if __name__ == "__main__":
+    with open('config.yaml', 'r') as f:
+        yaml_data = [line.replace('  ', '-').replace('\n', '') for line in f.readlines()]
+        yaml_data.append('')
+    starter_dict = parse_yaml(yaml_data)
+    print(json.dumps(starter_dict, indent=2))
+    create_starter(starter_dict)
