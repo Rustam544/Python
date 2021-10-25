@@ -23,6 +23,6 @@ def calc_cube(*args, **kwargs):
         yield kwargs[i] ** 3
 
 
-a = calc_cube(5, 4, 5.3, s=15)
+a = calc_cube(5, 4, 5.3, s=15, q=54)
 for i in a:
     print(i)
